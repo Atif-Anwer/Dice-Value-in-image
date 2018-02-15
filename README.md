@@ -15,6 +15,6 @@
 
 ### Results: ###
 
-![Result](https://i.imgur.com/lRmbJZZb.jpg)
+![Result](https://i.imgur.com/qVuq4ft.jpg)
 
  Ofcourse, its not accurate to 100%... but a work in progress..
