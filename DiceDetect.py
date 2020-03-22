@@ -13,9 +13,10 @@
 import numpy as np
 import argparse
 import cv2
-from os import listdir 
+from os import listdir
 from PIL import Image as all_Images
 import glob
+import pdb
 
 #------------------------------------------
 # Read all images in the folder
@@ -24,9 +25,9 @@ import glob
 def read_images_in_folder(path):
 	image_stack = []
 	# build path string, sort by name
-    	for img in sorted(glob.glob(path+'*.jpg')): 
+	for img in sorted(glob.glob(path+'*.jpg')):
 		image_stack.append(cv2.imread(img))
-    	return image_stack
+	return image_stack
 
 
 #------------------------------------------
@@ -61,7 +62,7 @@ for image in image_stack:
 	grey = cv2.dilate(grey, kernel2, iterations=1)
 	# grey = cv2.blur(grey, (3,3))
 
-	
+
 	#----------------------------------------------------------------------------
 	# Threshold and crop  and draw image to segment the dice
 	methods = [
@@ -81,7 +82,7 @@ for image in image_stack:
 	masked = cv2.bitwise_and(grey, grey, mask = threshImage)
 
 	# find contours
-	(_, contours, _) = cv2.findContours(masked.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	(contours,hierachy) = cv2.findContours(masked.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	print ("\nNo. of dice detected ={}".format(len(contours)))
 
 	# draw the contours on top of the original image and display
@@ -93,19 +94,19 @@ for image in image_stack:
 	# cv2.imshow("Contours", dice)
 	# cv2.waitKey(0)
 	# print ("Cropping individual dice for processing...")
-	
+
 	#----------------------------------------------------------------------------
-	# Go over all contours found, remove everything else 
+	# Go over all contours found, remove everything else
 	# and find the dots in the current contour
 	for index in contours:
-		
+
 		# create blank mask every loop
 		negative_mask = np.ones(threshImage.shape[:2], dtype="uint8") * 255
 		cv2.drawContours(negative_mask, [index], -1, 0, -1)
 		inv = cv2.bitwise_not(negative_mask)
 		cropped = cv2.bitwise_and(threshImage, threshImage, mask=inv )
 		cropped= cv2.erode(cropped, kernel2, iterations=1)
-		
+
 		# # Debug display
 		# cv2.namedWindow("dice",cv2.WINDOW_NORMAL)
 		# cv2.resizeWindow("dice", 600,600)
@@ -114,7 +115,7 @@ for image in image_stack:
 
 		# Flood fill background
 		im_floodfill = cropped.copy()
-			
+
 		h, w = cropped.shape[:2]
 		mask = np.zeros((h+2, w+2), np.uint8)
 		# Floodfill from point (0, 0)
@@ -130,33 +131,34 @@ for image in image_stack:
 		# Finding contours in dice
 		# cv2.CHAIN_APPROX_NONE returns more dots
 		# cv2.CHAIN_APPROX_SIMPLE returns lesser dots
-		(_, faceValue, _) = cv2.findContours(im_floodfill_inv, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+		(faceValue, _) = cv2.findContours(im_floodfill_inv, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 		dice_value = len(faceValue)
 
 		for index2 in faceValue:
 			# finding bounding rectangle for each contour
-			(x2,y2),r2 = cv2.minEnclosingCircle(index2)	
+			(x2,y2),r2 = cv2.minEnclosingCircle(index2)
 			M = cv2.moments(index2)
-			cX = int(M["m10"] / M["m00"]) 
-			cY = int(M["m01"] / M["m00"]) 
-			
+			cX = int(M["m10"] / M["m00"])
+			cY = int(M["m01"] / M["m00"])
+
 			# Draw x on the detected dot
-			cv2.putText(dice, "x", ((int(x2)-int(r2)/2),(int(y2)+int(r2)/2)), 
+			# breakpoint()
+			cv2.putText(dice, "x", (int( int(x2)-int(r2/2) ),int( int(y2)+int(r2/2) )),
 				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-				
+
 		# Finding the bounding circle and its center to place text
 		(x1,y1),r1 = cv2.minEnclosingCircle(index)
 		# Text position is offset by half radius to center the text on the dots
-		cv2.putText(dice, str(dice_value), ((int(x1)-int(r1)/2),(int(y1)+int(r1)/2)), 
-			cv2.FONT_HERSHEY_SIMPLEX, 1.6, (0, 255, 0), 4)	
+		cv2.putText(dice, str(dice_value), (int(int(x1)-int(r1/2) ),int(int(y1)+int(r1)/2)),
+			cv2.FONT_HERSHEY_SIMPLEX, 1.6, (0, 255, 0), 4)
 		cv2.namedWindow("Detected Face Value",cv2.WINDOW_NORMAL)
 		cv2.resizeWindow("Detected Face Value", 600,600)
 		cv2.imshow("Detected Face Value", dice)
-	
+
 	# Write the final image
 	q+=1
 	cv2.imwrite('ResultA0'+str(q)+'.jpeg', dice)
 
 	cv2.waitKey(0)
 cv2.destroyAllWindows()
-#----------------------------------------------------------------------------	
+#----------------------------------------------------------------------------
