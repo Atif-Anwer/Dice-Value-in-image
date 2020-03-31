@@ -7,7 +7,7 @@
 # -p : image path (optional)
 # -t : threshold value (optional)
 #
-# **** Uses python 2.7 ***
+# **** Uses python 3.4 ***
 #------------------------------------------------------------------------
 
 import numpy as np
@@ -122,7 +122,7 @@ for image in image_stack:
 		cv2.floodFill(im_floodfill, mask, (0,0), 255);
 		im_floodfill_inv = cv2.bitwise_not(im_floodfill)
 		# # Debug display
-		# cv2.namedWindow("dice",cv2.WINDOW_NORMAL)
+		# cv2.namedWindow ("dice",cv2.WINDOW_NORMAL)
 		# cv2.resizeWindow("dice", 600,600)
 		# cv2.imshow("dice", im_floodfill_inv)
 		# cv2.waitKey(0)
